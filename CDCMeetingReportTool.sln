@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{86BF4AA8-8F30-4842-A754-9CE1C78DF2FE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{237CA448-18F9-402E-90D4-0D3E64006CFC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{1EBF9612-0F58-46C2-B253-7E5DE13FFEF1}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDCMeetingReportTool.Playground", "src\CDCMeetingReportTool.Playground\CDCMeetingReportTool.Playground.csproj", "{5428AE93-E074-48C9-BE92-8956599A253B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDCMeetingReportTool.SampleTests", "test\CDCMeetingReportTool.SampleTests\CDCMeetingReportTool.SampleTests.csproj", "{7B321F59-15C4-4ED4-9D24-9EDFAD0279B8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5428AE93-E074-48C9-BE92-8956599A253B} = {86BF4AA8-8F30-4842-A754-9CE1C78DF2FE}
+		{7B321F59-15C4-4ED4-9D24-9EDFAD0279B8} = {237CA448-18F9-402E-90D4-0D3E64006CFC}
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5428AE93-E074-48C9-BE92-8956599A253B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5428AE93-E074-48C9-BE92-8956599A253B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5428AE93-E074-48C9-BE92-8956599A253B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5428AE93-E074-48C9-BE92-8956599A253B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B321F59-15C4-4ED4-9D24-9EDFAD0279B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B321F59-15C4-4ED4-9D24-9EDFAD0279B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B321F59-15C4-4ED4-9D24-9EDFAD0279B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B321F59-15C4-4ED4-9D24-9EDFAD0279B8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
