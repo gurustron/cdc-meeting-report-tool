@@ -6,6 +6,7 @@ Console.WriteLine("Hello, World!");
 
 // (body.ToList()[427] as Paragraph).ParagraphProperties.NumberingProperties
 
+string filepath = "";
 using (var doc = WordprocessingDocument.Open(filepath, false))
 {
     var idPartPairs = doc.Parts.ToList();
