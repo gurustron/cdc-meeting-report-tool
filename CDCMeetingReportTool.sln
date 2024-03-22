@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDCMeetingReportTool.Playgr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDCMeetingReportTool.SampleTests", "test\CDCMeetingReportTool.SampleTests\CDCMeetingReportTool.SampleTests.csproj", "{7B321F59-15C4-4ED4-9D24-9EDFAD0279B8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDCMeetingReportTool.Core", "src\CDCMeetingReportTool.Core\CDCMeetingReportTool.Core.csproj", "{997610EC-621C-47D7-AE28-A82EBA6B9FA3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +31,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{5428AE93-E074-48C9-BE92-8956599A253B} = {86BF4AA8-8F30-4842-A754-9CE1C78DF2FE}
 		{7B321F59-15C4-4ED4-9D24-9EDFAD0279B8} = {237CA448-18F9-402E-90D4-0D3E64006CFC}
+		{997610EC-621C-47D7-AE28-A82EBA6B9FA3} = {86BF4AA8-8F30-4842-A754-9CE1C78DF2FE}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{5428AE93-E074-48C9-BE92-8956599A253B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -39,5 +42,9 @@ Global
 		{7B321F59-15C4-4ED4-9D24-9EDFAD0279B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B321F59-15C4-4ED4-9D24-9EDFAD0279B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B321F59-15C4-4ED4-9D24-9EDFAD0279B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{997610EC-621C-47D7-AE28-A82EBA6B9FA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{997610EC-621C-47D7-AE28-A82EBA6B9FA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{997610EC-621C-47D7-AE28-A82EBA6B9FA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{997610EC-621C-47D7-AE28-A82EBA6B9FA3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
