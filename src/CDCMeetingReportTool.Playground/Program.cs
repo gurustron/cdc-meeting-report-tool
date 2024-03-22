@@ -55,3 +55,4 @@ using (var doc = WordprocessingDocument.Open(filepath, false))
 // ПОВЕСТКА ЗАСЕДАНИЯ:
 // РЕШЕНИЕ:
 // "  *		   *		*	         *		    *"
+// матч\w* (?<tournament>.*) между командами (?<home>.*) и (?<away>.*),.* (?<date>\d{1,2} \w* \d{4}) \w*\.
