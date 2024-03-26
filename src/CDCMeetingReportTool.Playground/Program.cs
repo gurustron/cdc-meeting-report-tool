@@ -1,4 +1,6 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Globalization;
+using System.Text.RegularExpressions;
+using CDCMeetingReportTool.Core;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 
@@ -30,26 +32,55 @@ using (var doc = WordprocessingDocument.Open(filepath, false))
     var nonVMatche = startsWithNumberList
         .Where(p => !p.InnerText.Contains("в матче турнира", StringComparison.InvariantCultureIgnoreCase)).ToList();
     var nonVMatcheTexts = nonVMatche.Select(p => p.InnerText).ToList();
-    var reInfo =
-        new Regex(@"матч\w* турнира (?<tournament>.*) между командами (?<home>.*) и (?<away>.*),.* (?<date>\d{1,2} \w* \d{4}) \w*\.");
-    var list2 = startsWithNumberList.Where(p => !reInfo.IsMatch(p.InnerText))
+    var topicInfoRegex = new Regex(
+            @"матч\w* турнира (?<tournament>.*) между командами (?<home>.*) и (?<away>.*),.* (?<date>\d{1,2} \w* \d{4}) \w*\.", 
+            RegexOptions.Compiled);
+    var list2 = startsWithNumberList.Where(p => !topicInfoRegex.IsMatch(p.InnerText))
         .ToList();
-    
+
+    var questionParas = startsWithNumberList
+        .Where(p => topicInfoRegex.IsMatch(p.InnerText))
+        .ToList();
+
+    var questions = new List<Question>(questionParas.Count);
+    foreach (var questionPara in questionParas)
+    {
+        var source = questionPara.InnerText;
+        var match = topicInfoRegex.Match(source);
+        var dateString = match.Groups["date"].Value; // 25 мая 2023
+        var date = DateOnly.ParseExact(dateString, "dd MMMM yyyy", CultureInfo.GetCultureInfo("ru-RU"));
+        var question = new Question(new ParsedQuestion(
+                Tournament: match.Groups["tournament"].Value,
+                SourceDate: dateString,
+                Date: date,
+                Home: match.Groups["home"].Value,
+                Away: match.Groups["away"].Value
+            ),
+            [source]);
+        questions.Add(question);
+    }
+
+    var result = questions
+        .Select(q => q.Parsed)
+        .GroupBy(q => q.Tournament)
+        .ToDictionary(g => g.Key,
+            g => g.GroupBy(q => q.Date)
+                .ToDictionary(g => g.Key,
+                    g => g.ToLookup(q => $"{q.Home} - {q.Away}")));
+
     var decisions  = list.Where(p => !string.IsNullOrEmpty(p.InnerText))
         .SkipWhile(p=> !p.InnerText.Contains("РЕШЕНИЕ:"))
         .Skip(1)
+        .TakeWhile(p => !p.InnerText.Contains("*"))
         .ToList();
-    int counter = 0;
     foreach (var p in decisions)
     {
         if (p.ParagraphProperties.NumberingProperties is not null)
         {
-            counter++;
         }
         
     }
 
-    Console.WriteLine(counter);
 }
 
 // ПОВЕСТКА ЗАСЕДАНИЯ:

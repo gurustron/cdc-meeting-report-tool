@@ -11,4 +11,8 @@
         <PackageReference Include="DocumentFormat.OpenXml.Features" Version="3.0.1" />
         <PackageReference Include="DocumentFormat.OpenXml.Linq" Version="3.0.1" />
     </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\CDCMeetingReportTool.Core\CDCMeetingReportTool.Core.csproj" />
+    </ItemGroup>
 </Project>
