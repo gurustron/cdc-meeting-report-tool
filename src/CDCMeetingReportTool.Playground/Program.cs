@@ -1,14 +1,16 @@
 ﻿using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using CDCMeetingReportTool.Core;
+using CDCMeetingReportTool.Playground;
+using DocumentFormat.OpenXml.Linq;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
-
-Console.WriteLine("Hello, World!");
+using Stateless;
 
 // (body.ToList()[427] as Paragraph).ParagraphProperties.NumberingProperties
 
-string filepath = "/home/gurustron/Projects/cdc-meeting-report-tool/TestFiles/Протокол от 07.06.23.docx";
+string filepath = "/home/gurustron/Projects/cdc-meeting-report-tool/TestFiles/Протокол от 26.03.24.docx";
 using (var doc = WordprocessingDocument.Open(filepath, false))
 {
     var idPartPairs = doc.Parts.ToList();
@@ -32,21 +34,19 @@ using (var doc = WordprocessingDocument.Open(filepath, false))
     var nonVMatche = startsWithNumberList
         .Where(p => !p.InnerText.Contains("в матче турнира", StringComparison.InvariantCultureIgnoreCase)).ToList();
     var nonVMatcheTexts = nonVMatche.Select(p => p.InnerText).ToList();
-    var topicInfoRegex = new Regex(
-            @"матч\w* турнира (?<tournament>.*) между командами (?<home>.*) и (?<away>.*),.* (?<date>\d{1,2} \w* \d{4}) \w*\.", 
-            RegexOptions.Compiled);
-    var list2 = startsWithNumberList.Where(p => !topicInfoRegex.IsMatch(p.InnerText))
+
+    var list2 = startsWithNumberList.Where(p => !Regexes.TopicInfoRegex().IsMatch(p.InnerText))
         .ToList();
 
     var questionParas = startsWithNumberList
-        .Where(p => topicInfoRegex.IsMatch(p.InnerText))
+        .Where(p => Regexes.TopicInfoRegex().IsMatch(p.InnerText))
         .ToList();
 
     var questions = new List<Question>(questionParas.Count);
     foreach (var questionPara in questionParas)
     {
         var source = questionPara.InnerText;
-        var match = topicInfoRegex.Match(source);
+        var match = Regexes.TopicInfoRegex().Match(source);
         var dateString = match.Groups["date"].Value; // 25 мая 2023
         var date = DateOnly.ParseExact(dateString, "dd MMMM yyyy", CultureInfo.GetCultureInfo("ru-RU"));
         var question = new Question(new ParsedQuestion(
@@ -61,29 +61,105 @@ using (var doc = WordprocessingDocument.Open(filepath, false))
     }
 
     var result = questions
-        .Select(q => q.Parsed)
-        .GroupBy(q => q.Tournament)
+        .Select((q, i) => (q.Parsed, i))
+        .GroupBy(q => q.Parsed.Tournament)
         .ToDictionary(g => g.Key,
-            g => g.GroupBy(q => q.Date)
+            g => g.GroupBy(q => q.Parsed.Date)
                 .ToDictionary(g => g.Key,
-                    g => g.ToLookup(q => $"{q.Home} - {q.Away}")));
+                    g => g.ToLookup(q => $"{q.Parsed.Home} - {q.Parsed.Away}")));
 
     var decisions  = list.Where(p => !string.IsNullOrEmpty(p.InnerText))
         .SkipWhile(p=> !p.InnerText.Contains("РЕШЕНИЕ:"))
         .Skip(1)
         .TakeWhile(p => !p.InnerText.Contains("*"))
         .ToList();
+    int counter = 0;
+    var parsedDecisions = Enumerable.Range(0, questions.Count)
+        .Select(_ => new List<string>())
+        .ToList();
     foreach (var p in decisions)
     {
         if (p.ParagraphProperties.NumberingProperties is not null)
         {
+            counter++;
         }
+
+        if (counter != 0 && !string.IsNullOrWhiteSpace(p.InnerText))
+        {
+            parsedDecisions[counter - 1].Add(p.InnerText);
+        }
+    }
+
+    var list3 = parsedDecisions.Select((l, i) => (l, i)).Where(l => l.l.Count != 2).ToList();
+    var stringBuilder = new StringBuilder();
+    
+    foreach (var (key, value) in result.OrderBy(kvp => kvp.Key))
+    {
+        stringBuilder.AppendLine(key);
+        stringBuilder.AppendLine();
+
+        foreach (var (dateOnly, lookup) in value.OrderBy(v => v.Key))
+        {
+            stringBuilder.AppendLine(dateOnly.Value.ToString("dd MMMM yyyy", CultureInfo.GetCultureInfo("ru-RU")));
+            stringBuilder.AppendLine();
+            foreach (var valueTuples in lookup)
+            {
+                stringBuilder.AppendLine(valueTuples.Key);
+                stringBuilder.AppendLine();
+                foreach (var (parsed, i) in valueTuples)
+                {
+                    var toPrint = parsedDecisions[i];
+                    foreach (var des in toPrint.Skip(1))
+                    {
+                        stringBuilder.AppendLine(des);
+                        stringBuilder.AppendLine();
+                    }
+                }
+            }
+        }
+        
         
     }
 
+    var results = stringBuilder.ToString();
 }
 
 // ПОВЕСТКА ЗАСЕДАНИЯ:
 // РЕШЕНИЕ:
 // "  *		   *		*	         *		    *"
 // матч\w* (?<tournament>.*) между командами (?<home>.*) и (?<away>.*),.* (?<date>\d{1,2} \w* \d{4}) \w*\.
+
+
+
+
+public class QuestionsAndDecisionsParser
+{
+    private StateMachine<ParsingState, LineType> _stateMachine;
+
+    private enum ParsingState
+    {
+        LookingQuestionsStart, // either not started or haven't encountered
+        ReadingQuestions,
+        ReadingDecisions,
+        Processed
+    }
+    
+    private enum LineType
+    {
+        NewQuestion,
+        QuestionsFinished,
+        NewDecision,
+        DecisionsFinished,
+    }
+
+    public QuestionsAndDecisionsParser()
+    {
+        
+    }
+    
+    
+    private void ConfigureStateMachine()
+    {
+
+    }
+} 

@@ -10,6 +10,7 @@
     <ItemGroup>
         <PackageReference Include="DocumentFormat.OpenXml.Features" Version="3.0.1" />
         <PackageReference Include="DocumentFormat.OpenXml.Linq" Version="3.0.1" />
+        <PackageReference Include="Stateless" Version="5.15.0" />
     </ItemGroup>
 
     <ItemGroup>
