@@ -20,10 +20,20 @@ using (var doc = WordprocessingDocument.Open(filepath, false))
     var body = main.Document.Body;
     var list = body.Descendants<Paragraph>()
         .ToList();
+    var questionsAndDecisionsParser = new QuestionsAndDecisionsParser();
+    foreach (var par in list)
+    {
+        questionsAndDecisionsParser.LineEncountered(par.InnerText);
+        if (par.InnerText.Contains("ПОВЕСТКА ЗАСЕДАНИЯ:"))
+        {
+            var parsingState = questionsAndDecisionsParser.State;
+            break;
+        }
+    }
     var list1 = list.Where(p => !string.IsNullOrEmpty(p.InnerText))
         .SkipWhile(p => !p.InnerText.Contains("ПОВЕСТКА ЗАСЕДАНИЯ:"))
         .Skip(1)
-        .TakeWhile(p=> p.InnerText.Contains("РЕШЕНИЕ:"))
+        .TakeWhile(p=> !p.InnerText.Contains("РЕШЕНИЕ:"))
         .ToList();
     var regex = new Regex(@"^\d+\..*");
     var startsWithNumberList = list 
@@ -136,30 +146,67 @@ public class QuestionsAndDecisionsParser
 {
     private StateMachine<ParsingState, LineType> _stateMachine;
 
-    private enum ParsingState
+    private StateMachine<ParsingState,LineType>.TriggerWithParameters<string> _newQuestionTrigger;
+    private StateMachine<ParsingState,LineType>.TriggerWithParameters<string> _questionContentTrigger;
+
+    private List<string> _currentQuestionData = [];
+    private StateMachine<ParsingState,LineType>.TriggerWithParameters<string> _lineTrigger;
+
+    public enum ParsingState
     {
-        LookingQuestionsStart, // either not started or haven't encountered
-        ReadingQuestions,
+        SearchingQuestionsStart, // either not started or haven't encountered first quiestion
+        ReadingQuestion,
         ReadingDecisions,
         Processed
     }
     
     private enum LineType
     {
+        Line,
         NewQuestion,
+        QuestionContent,
         QuestionsFinished,
         NewDecision,
+        DecisionContent,
         DecisionsFinished,
     }
 
     public QuestionsAndDecisionsParser()
     {
-        
+        _stateMachine = new StateMachine<ParsingState, LineType>(ParsingState.SearchingQuestionsStart);
+        ConfigureStateMachine();
     }
     
     
     private void ConfigureStateMachine()
     {
-
+        _lineTrigger = _stateMachine.SetTriggerParameters<string>(LineType.Line);
+        _stateMachine.Configure(ParsingState.SearchingQuestionsStart)
+            .PermitIf(_lineTrigger, ParsingState.ReadingQuestion, s => s.Contains("ПОВЕСТКА ЗАСЕДАНИЯ:"))
+            .PermitReentryIf(_lineTrigger, s => !s.Contains("ПОВЕСТКА ЗАСЕДАНИЯ:"));
+        // _stateMachine.Configure(ParsingState.SearchingQuestionsStart)
+        //     .Permit(LineType.NewQuestion, ParsingState.ReadingQuestion)
+        //     .Permit(LineType.QuestionsFinished, ParsingState.ReadingDecisions);
+        //
+        // _newQuestionTrigger = _stateMachine.SetTriggerParameters<string>(LineType.NewQuestion);
+        // _questionContentTrigger = _stateMachine.SetTriggerParameters<string>(LineType.QuestionContent);
+        //
+        // _stateMachine.Configure(ParsingState.ReadingQuestion)
+        //     .OnEntryFrom(_newQuestionTrigger, NewQuestion)
+        //     .PermitReentry(LineType.NewQuestion)
+        //     ;
     }
-} 
+
+    public void LineEncountered(string line)
+    {
+        _stateMachine.Fire(_lineTrigger, line);
+    }
+
+    public ParsingState State => _stateMachine.State;
+
+    private void NewQuestion(string questionLine)
+    {
+        _currentQuestionData = [questionLine];
+    }
+}
+
