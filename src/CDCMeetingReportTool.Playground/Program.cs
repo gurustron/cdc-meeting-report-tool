@@ -23,8 +23,8 @@ using (var doc = WordprocessingDocument.Open(filepath, false))
     var questionsAndDecisionsParser = new QuestionsAndDecisionsParser();
     foreach (var par in list)
     {
-        questionsAndDecisionsParser.LineEncountered(par.InnerText);
-        if (par.InnerText.Contains("ПОВЕСТКА ЗАСЕДАНИЯ:"))
+        questionsAndDecisionsParser.LineEncountered(par);
+        if (par.InnerText.Contains("РЕШЕНИЕ:"))
         {
             var parsingState = questionsAndDecisionsParser.State;
             break;
@@ -146,16 +146,20 @@ public class QuestionsAndDecisionsParser
 {
     private StateMachine<ParsingState, LineType> _stateMachine;
 
-    private StateMachine<ParsingState,LineType>.TriggerWithParameters<string> _newQuestionTrigger;
-    private StateMachine<ParsingState,LineType>.TriggerWithParameters<string> _questionContentTrigger;
+    // private StateMachine<ParsingState,LineType>.TriggerWithParameters<string> _newQuestionTrigger;
+    // private StateMachine<ParsingState,LineType>.TriggerWithParameters<string> _questionContentTrigger;
 
-    private List<string> _currentQuestionData = [];
-    private StateMachine<ParsingState,LineType>.TriggerWithParameters<string> _lineTrigger;
+    private List<string> _currentData = [];
+    private List<List<string>> _questions = [];
+    private StateMachine<ParsingState,LineType>.TriggerWithParameters<Paragraph> _lineTrigger;
 
     public enum ParsingState
     {
-        SearchingQuestionsStart, // either not started or haven't encountered first quiestion
+        SearchingQuestionsStart, // either not started or haven't encountered first question
+        QuestionsFound,
+        NewQuestion,
         ReadingQuestion,
+        DecisionsFound,
         ReadingDecisions,
         Processed
     }
@@ -180,10 +184,36 @@ public class QuestionsAndDecisionsParser
     
     private void ConfigureStateMachine()
     {
-        _lineTrigger = _stateMachine.SetTriggerParameters<string>(LineType.Line);
+        _lineTrigger = _stateMachine.SetTriggerParameters<Paragraph>(LineType.Line);
         _stateMachine.Configure(ParsingState.SearchingQuestionsStart)
-            .PermitIf(_lineTrigger, ParsingState.ReadingQuestion, s => s.Contains("ПОВЕСТКА ЗАСЕДАНИЯ:"))
-            .PermitReentryIf(_lineTrigger, s => !s.Contains("ПОВЕСТКА ЗАСЕДАНИЯ:"));
+            .PermitIf(_lineTrigger, ParsingState.QuestionsFound, s => s.InnerText.Contains("ПОВЕСТКА ЗАСЕДАНИЯ:"))
+            .PermitReentryIf(_lineTrigger, s => !s.InnerText.Contains("ПОВЕСТКА ЗАСЕДАНИЯ:"));
+
+        _stateMachine.Configure(ParsingState.QuestionsFound)
+            .PermitIf(_lineTrigger, ParsingState.NewQuestion, p => Regexes.StartsWithNumberRegex().IsMatch(p.InnerText))
+            .PermitReentryIf(_lineTrigger, p => !Regexes.StartsWithNumberRegex().IsMatch(p.InnerText));
+
+        _stateMachine.Configure(ParsingState.NewQuestion)
+            .PermitIf(_lineTrigger, ParsingState.ReadingQuestion,
+                p => !Regexes.StartsWithNumberRegex().IsMatch(p.InnerText))
+            .PermitReentryIf(_lineTrigger, p => Regexes.StartsWithNumberRegex().IsMatch(p.InnerText))
+            .OnEntryFrom(_lineTrigger, paragraph =>
+            {
+                ProceedQuestion();
+
+                _currentData.Add(paragraph.InnerText);
+            });
+
+        _stateMachine.Configure(ParsingState.ReadingQuestion)
+            .PermitReentryIf(_lineTrigger, p => !Regexes.StartsWithNumberRegex().IsMatch(p.InnerText) && !p.InnerText.Contains("РЕШЕНИЕ:"))
+            .PermitIf(_lineTrigger, ParsingState.NewQuestion, p => Regexes.StartsWithNumberRegex().IsMatch(p.InnerText))
+            .PermitIf(_lineTrigger, ParsingState.DecisionsFound, p => p.InnerText.Contains("РЕШЕНИЕ:"));
+
+        _stateMachine.Configure(ParsingState.QuestionsFound)
+            .OnEntry(ProceedQuestion);
+
+        // _stateMachine.Configure(ParsingState.ReadingQuestion)
+
         // _stateMachine.Configure(ParsingState.SearchingQuestionsStart)
         //     .Permit(LineType.NewQuestion, ParsingState.ReadingQuestion)
         //     .Permit(LineType.QuestionsFinished, ParsingState.ReadingDecisions);
@@ -197,7 +227,16 @@ public class QuestionsAndDecisionsParser
         //     ;
     }
 
-    public void LineEncountered(string line)
+    private void ProceedQuestion()
+    {
+        if (_currentData.Any())
+        {
+            _questions.Add(_currentData); // TODO - parse question
+            _currentData = new List<string>();
+        }
+    }
+
+    public void LineEncountered(Paragraph line)
     {
         _stateMachine.Fire(_lineTrigger, line);
     }
@@ -206,7 +245,7 @@ public class QuestionsAndDecisionsParser
 
     private void NewQuestion(string questionLine)
     {
-        _currentQuestionData = [questionLine];
+        _currentData = [questionLine];
     }
 }
 
