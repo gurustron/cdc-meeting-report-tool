@@ -8,9 +8,20 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Stateless;
 
+// TODO:
+// - load all team names (duplicates - verification)
+// - load all tournaments (duplicates - verification)
+// - output to formatted word file
+// - sort tournaments by?
+// - UI
+
+// var filepath = @"D:\Projects\TestData\Протокол от 01.03.24.docx"; 
+var filepath = @"D:\Projects\cdc-meeting-report-tool\TestFiles\Протокол от 23.04.24_2.docx"; 
+// var filepath = @"D:\Projects\TestData\Повестка КДК на 7 июня.docx";
+// var filepath =    "..\\TestData\\Повестка КДК на 7 июня.docx";
 // (body.ToList()[427] as Paragraph).ParagraphProperties.NumberingProperties
 
-string filepath = "/home/gurustron/Projects/cdc-meeting-report-tool/TestFiles/Протокол от 26.03.24.docx";
+// string filepath = "/home/gurustron/Projects/cdc-meeting-report-tool/TestFiles/Протокол от 26.03.24.docx";
 using (var doc = WordprocessingDocument.Open(filepath, false))
 {
     var idPartPairs = doc.Parts.ToList();
@@ -50,6 +61,9 @@ using (var doc = WordprocessingDocument.Open(filepath, false))
 
     var questionParas = startsWithNumberList
         .Where(p => Regexes.TopicInfoRegex().IsMatch(p.InnerText))
+        .ToList();   
+    var non_questionParas = startsWithNumberList
+        .Where(p => !Regexes.TopicInfoRegex().IsMatch(p.InnerText))
         .ToList();
 
     var questions = new List<Question>(questionParas.Count);
