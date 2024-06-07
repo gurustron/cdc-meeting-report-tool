@@ -108,7 +108,9 @@ using (var doc = WordprocessingDocument.Open(filepath, false))
             counter++;
         }
 
-        if (counter != 0 && !string.IsNullOrWhiteSpace(p.InnerText))
+        if (counter != 0 && !string.IsNullOrWhiteSpace(p.InnerText)
+                         && counter <= parsedDecisions.Count //dirty hack for non-parsed questions
+            )
         {
             parsedDecisions[counter - 1].Add(p.InnerText);
         }
