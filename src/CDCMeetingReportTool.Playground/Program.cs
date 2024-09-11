@@ -66,26 +66,34 @@ using (var doc = WordprocessingDocument.Open(filepath, false))
         .Where(p => !Regexes.TopicInfoRegex().IsMatch(p.InnerText))
         .ToList();
 
-    var questions = new List<Question>(questionParas.Count);
-    foreach (var questionPara in questionParas)
+    var questions = new List<Question>(startsWithNumberList.Count);
+    foreach (var questionPara in startsWithNumberList)
     {
         var source = questionPara.InnerText;
         var match = Regexes.TopicInfoRegex().Match(source);
-        var dateString = match.Groups["date"].Value; // 25 мая 2023
-        var date = DateOnly.ParseExact(dateString, "dd MMMM yyyy", CultureInfo.GetCultureInfo("ru-RU"));
-        var question = new Question(new ParsedQuestion(
-                Tournament: match.Groups["tournament"].Value,
-                SourceDate: dateString,
-                Date: date,
-                Home: match.Groups["home"].Value,
-                Away: match.Groups["away"].Value
-            ),
-            [source]);
-        questions.Add(question);
+        if (match.Success)
+        {
+            var dateString = match.Groups["date"].Value; // 25 мая 2023
+            var date = DateOnly.ParseExact(dateString, "dd MMMM yyyy", CultureInfo.GetCultureInfo("ru-RU"));
+            var question = new Question(new ParsedQuestion(
+                    Tournament: match.Groups["tournament"].Value,
+                    SourceDate: dateString,
+                    Date: date,
+                    Home: match.Groups["home"].Value,
+                    Away: match.Groups["away"].Value
+                ),
+                [source]);
+            questions.Add(question);
+        }
+        else
+        {
+            questions.Add(new Question(null, [source]));
+        }
     }
 
     var result = questions
         .Select((q, i) => (q.Parsed, i))
+        .Where(t => t.Parsed is not null)
         .GroupBy(q => q.Parsed.Tournament)
         .ToDictionary(g => g.Key,
             g => g.GroupBy(q => q.Parsed.Date)
@@ -126,7 +134,7 @@ using (var doc = WordprocessingDocument.Open(filepath, false))
 
         foreach (var (dateOnly, lookup) in value.OrderBy(v => v.Key))
         {
-            stringBuilder.AppendLine(dateOnly.Value.ToString("dd MMMM yyyy", CultureInfo.GetCultureInfo("ru-RU")));
+            stringBuilder.AppendLine(dateOnly.Value.ToString("dd MMMM yyyy года.", CultureInfo.GetCultureInfo("ru-RU")));
             stringBuilder.AppendLine();
             foreach (var valueTuples in lookup)
             {
