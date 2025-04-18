@@ -16,9 +16,12 @@ using Stateless;
 // - UI
 
 // var filepath = @"D:\Projects\TestData\Протокол от 01.03.24.docx"; 
-var filepath = @"D:\Projects\cdc-meeting-report-tool\TestFiles\Протокол от 23.04.24_2.docx"; 
+var dateStr = "16.04.2025";
+var filepath = 
+    @"D:\Projects\cdc-meeting-report-tool\TestFiles\Протокол от 23.04.24_2.docx"
+    ; 
 // var filepath = @"D:\Projects\TestData\Повестка КДК на 7 июня.docx";
-// var filepath =    "..\\TestData\\Повестка КДК на 7 июня.docx";
+// var filepath = "..\\TestData\\Повестка КДК на 7 июня.docx";
 // (body.ToList()[427] as Paragraph).ParagraphProperties.NumberingProperties
 
 // string filepath = "/home/gurustron/Projects/cdc-meeting-report-tool/TestFiles/Протокол от 26.03.24.docx";
@@ -156,6 +159,31 @@ using (var doc = WordprocessingDocument.Open(filepath, false))
     }
 
     var results = stringBuilder.ToString();
+    File.WriteAllText(@"C:\Users\sstronchinskiy\Downloads\Telegram Desktop\Протокол от 16.04.2025_Result.txt", results);
+    var parsedQuestion = questions
+        .Where(t => t.Parsed is not null)
+        .ToList();
+
+    var tournaments = parsedQuestion.Select(q => q.Parsed.Tournament)
+        .Distinct()
+        .Order();
+    File.WriteAllText(@"C:\Users\sstronchinskiy\Downloads\Telegram Desktop\Протокол от 16.04.2025_Tournaments.txt",
+        string.Join(Environment.NewLine, tournaments));
+    
+    var teams = parsedQuestion.Select(q => q.Parsed.Home)
+        .Concat(parsedQuestion.Select(q => q.Parsed.Away))
+        .Distinct()
+        .Order();
+    File.WriteAllText(@"C:\Users\sstronchinskiy\Downloads\Telegram Desktop\Протокол от 16.04.2025_Teams.txt",
+        string.Join(Environment.NewLine, teams));
+    
+    var nonParsedQ = questions
+        .Where(t => t.Parsed is null);
+    var nonParsed = nonParsedQ
+        .Select(t => string.Join(", ", t.SourceData));
+
+    File.WriteAllText(@"C:\Users\sstronchinskiy\Downloads\Telegram Desktop\Протокол от 16.04.2025_NonParsed.txt",
+        string.Join(Environment.NewLine, nonParsed));
 }
 
 // ПОВЕСТКА ЗАСЕДАНИЯ:
